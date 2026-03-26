@@ -1,0 +1,1368 @@
+<!DOCTYPE html>
+<html lang="he" dir="rtl">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=no">
+<title>מצפן חיים</title>
+<link href="https://fonts.googleapis.com/css2?family=Rubik:wght@300;400;500;700;900&display=swap" rel="stylesheet">
+<style>
+* { box-sizing: border-box; margin: 0; padding: 0; }
+:root {
+  --bg: #fff; --surface: #F7F7F5; --border: #DDDBD6; --border-dk: #BBBAB5;
+  --ink: #1A1A18; --ink-mid: #4A4A46; --ink-lt: #8A8A84;
+  --accent: #1A3D48; --accent-lt: #2C5F6E; --accent-bg: #EEF4F6;
+  --danger: #8B1A1A; --ok: #1A4A2E; --ok-bg: #EEF6F2;
+  --gold: #7A5A10; --gold-bg: #FBF6EA; --r: 6px;
+}
+html { scroll-behavior: smooth; }
+body {
+  font-family: 'Rubik', sans-serif; background: var(--bg); color: var(--ink);
+  min-height: 100vh; direction: rtl; -webkit-tap-highlight-color: transparent;
+  font-size: 18px; line-height: 1.5;
+}
+
+/* Progress */
+.prog-wrap { position: fixed; top:0; left:0; right:0; height:3px; background:var(--border); z-index:300; }
+.prog-bar   { height:100%; background:var(--accent); transition:width .4s ease; width:0%; }
+
+/* Autosave */
+.save-badge {
+  position:fixed; top:12px; left:16px; font-size:13px; color:var(--ok);
+  display:none; align-items:center; gap:5px; z-index:290;
+}
+.save-badge.on { display:flex; }
+.save-dot { width:6px; height:6px; background:var(--ok); border-radius:50%; }
+
+/* Screens */
+.screen { display:none; flex-direction:column; min-height:100vh; padding:28px 26px 40px; max-width:600px; margin:0 auto; }
+.screen.active { display:flex; }
+
+/* Welcome */
+.wlc-top { flex:1; display:flex; flex-direction:column; align-items:center; justify-content:center; text-align:center; gap:16px; }
+.logo-ring {
+  width:68px; height:68px; border:2px solid var(--accent); border-radius:50%;
+  display:flex; align-items:center; justify-content:center; margin:0 auto;
+}
+.divline { width:44px; height:2px; background:var(--accent); margin:4px auto; }
+.app-title { font-family:'Rubik',sans-serif; font-size:42px; font-weight:700; color:var(--accent); line-height:1.1; }
+.app-sub   { font-size:19px; color:var(--ink-mid); max-width:320px; font-weight:300; line-height:1.65; }
+.priv-chip { background:var(--surface); border:1px solid var(--border); border-radius:4px; padding:10px 18px; font-size:15px; color:var(--ink-mid); }
+
+/* Section header */
+.sec-hdr { display:flex; align-items:center; gap:12px; margin-bottom:22px; padding-bottom:18px; border-bottom:1px solid var(--border); }
+.sec-num  { width:42px; height:42px; border:2px solid var(--accent); border-radius:50%; display:flex; align-items:center; justify-content:center; font-family:'Rubik',sans-serif; font-size:20px; font-weight:700; color:var(--accent); flex-shrink:0; }
+.sec-title{ font-family:'Rubik',sans-serif; font-size:23px; font-weight:700; color:var(--ink); }
+
+/* Centered intro */
+.ctr-icon  { width:68px; height:68px; border:2px solid var(--accent); border-radius:50%; display:flex; align-items:center; justify-content:center; font-size:26px; margin:18px auto; }
+.ctr-title { font-family:'Rubik',sans-serif; font-size:29px; font-weight:700; color:var(--ink); text-align:center; }
+.ctr-sub   { font-size:18px; color:var(--ink-mid); text-align:center; line-height:1.65; margin-top:10px; font-weight:300; }
+
+/* Buttons */
+.btn {
+  display:block; width:100%; padding:19px 22px; border:none; border-radius:var(--r);
+  font-family:'Rubik',sans-serif; font-size:19px; font-weight:700;
+  cursor:pointer; text-align:center; line-height:1.3; -webkit-appearance:none; transition:opacity .15s;
+}
+.btn:active { opacity:.82; }
+.btn + .btn { margin-top:10px; }
+.btn-primary  { background:var(--accent); color:#fff; border:2px solid var(--accent); }
+.btn-secondary{ background:var(--bg); color:var(--ink); border:2px solid var(--border-dk); }
+.btn-danger   { background:var(--danger); color:#fff; border:2px solid var(--danger); }
+.btn-ghost    { background:transparent; color:var(--ink-lt); font-size:16px; font-weight:400; text-decoration:underline; padding:13px; border:none; }
+.btn-dashed   { background:transparent; border:2px dashed var(--border-dk); color:var(--accent); font-size:17px; font-weight:600; padding:14px; border-radius:var(--r); cursor:pointer; width:100%; font-family:'Rubik',sans-serif; }
+
+/* Forms */
+.fg { margin-bottom:16px; }
+.fg label { display:block; font-size:15px; font-weight:600; color:var(--ink); margin-bottom:7px; }
+.finput {
+  width:100%; padding:15px 16px; border:2px solid var(--border); border-radius:var(--r);
+  font-family:'Rubik',sans-serif; font-size:18px; color:var(--ink); background:var(--bg);
+  direction:rtl; -webkit-appearance:none; transition:border-color .2s;
+}
+.finput:focus { outline:none; border-color:var(--accent); }
+textarea.finput { min-height:90px; resize:vertical; }
+
+/* Question */
+.q-meta  { font-size:13px; color:var(--ink-lt); margin-bottom:10px; font-weight:500; letter-spacing:.05em; text-transform:uppercase; }
+.q-text  { font-family:'Rubik',sans-serif; font-size:26px; font-weight:700; color:var(--ink); line-height:1.4; margin-bottom:22px; }
+.q-note  { font-size:15px; color:var(--ink-mid); background:var(--surface); border-right:3px solid var(--border-dk); padding:10px 16px; border-radius:0 var(--r) var(--r) 0; margin-bottom:18px; line-height:1.65; }
+
+/* Choices */
+.choices { display:flex; flex-direction:column; gap:10px; margin-bottom:18px; }
+.chbtn {
+  padding:17px 20px; border:2px solid var(--border); border-radius:var(--r); background:var(--bg);
+  font-family:'Rubik',sans-serif; font-size:19px; color:var(--ink); cursor:pointer;
+  text-align:right; display:flex; align-items:center; gap:12px; -webkit-appearance:none;
+  transition:border-color .15s, background .15s;
+}
+.chbtn:hover { border-color:var(--border-dk); }
+.chbtn.sel   { border-color:var(--accent); background:var(--accent-bg); color:var(--accent); font-weight:700; }
+.chbtn.sel::before { content:'✓'; margin-left:auto; flex-shrink:0; color:var(--accent); }
+.ch-ico { font-size:20px; filter:grayscale(.6); }
+
+/* Checkboxes */
+.cbrow {
+  display:flex; align-items:center; gap:14px; padding:15px 18px;
+  border:2px solid var(--border); border-radius:var(--r); background:var(--bg);
+  cursor:pointer; margin-bottom:8px; transition:border-color .15s;
+}
+.cbrow:hover  { border-color:var(--border-dk); }
+.cbrow.on     { border-color:var(--accent); background:var(--accent-bg); }
+.cbbox { width:28px; height:28px; border:2px solid var(--border-dk); border-radius:4px; display:flex; align-items:center; justify-content:center; flex-shrink:0; font-size:15px; color:transparent; transition:all .15s; }
+.cbrow.on .cbbox { background:var(--accent); border-color:var(--accent); color:#fff; }
+.cblabel { font-size:19px; flex:1; }
+
+/* Person card */
+.pcard { background:var(--surface); border:1px solid var(--border); border-radius:var(--r); padding:18px; margin-bottom:10px; }
+.pcard .fg { margin-bottom:10px; }
+.pcard .fg:last-child { margin-bottom:0; }
+
+/* Divider */
+.divider { height:1px; background:var(--border); margin:18px 0; }
+
+/* Nav */
+.nav { margin-top:auto; padding-top:24px; }
+
+/* Spacer */
+.sp { flex:1; }
+
+/* Boxes */
+.infobox { background:var(--gold-bg); border-right:4px solid var(--gold); border-radius:var(--r); padding:18px 20px; margin-bottom:16px; font-size:16px; color:var(--ink-mid); line-height:1.8; }
+.okbox   { background:var(--ok-bg); border:1px solid var(--ok); border-radius:var(--r); padding:14px 16px; margin-bottom:14px; font-size:16px; color:var(--ok); font-weight:500; }
+.card    { background:var(--surface); border:1px solid var(--border); border-radius:var(--r); padding:20px 22px; margin-bottom:14px; }
+
+/* ── VIDEO RECORDING SCREEN ── */
+#screen-rec { padding:0; background:#000; }
+#recCanvas  { width:100%; display:block; }
+.rec-ui {
+  position:fixed; bottom:0; left:0; right:0;
+  background:rgba(0,0,0,.75); backdrop-filter:blur(8px);
+  padding:16px 20px; display:flex; flex-direction:column; gap:10px;
+  max-width:600px; margin:0 auto;
+}
+.rec-q-box {
+  background:rgba(26,61,72,.88); border-radius:var(--r);
+  padding:14px 18px; color:#fff;
+}
+.rec-q-meta { font-size:12px; color:rgba(255,255,255,.6); margin-bottom:5px; letter-spacing:.08em; text-transform:uppercase; }
+.rec-q-text { font-family:'Rubik',sans-serif; font-size:21px; font-weight:700; line-height:1.4; }
+.rec-controls { display:flex; gap:10px; }
+.rec-btn {
+  flex:1; padding:16px; border:none; border-radius:var(--r);
+  font-family:'Rubik',sans-serif; font-size:18px; font-weight:700;
+  cursor:pointer; -webkit-appearance:none;
+}
+.rec-next { background:var(--accent); color:#fff; }
+.rec-stop { background:var(--danger); color:#fff; }
+.rec-indicator { display:flex; align-items:center; gap:8px; color:#ff4444; font-size:14px; font-weight:700; }
+.rec-dot { width:9px; height:9px; background:#ff4444; border-radius:50%; animation:blink 1s infinite; }
+@keyframes blink { 0%,100%{opacity:1} 50%{opacity:0} }
+.rec-timer { color:rgba(255,255,255,.8); font-size:14px; font-weight:500; margin-right:auto; }
+
+/* Summary */
+.sum-mod   { margin-bottom:26px; }
+.sum-title { font-family:'Rubik',sans-serif; font-size:20px; font-weight:700; color:var(--ink); margin-bottom:13px; padding-bottom:9px; border-bottom:2px solid var(--ink); }
+.sum-item  { margin-bottom:13px; padding-right:13px; border-right:2px solid var(--border); }
+.sum-lbl   { font-size:12px; color:var(--ink-lt); margin-bottom:3px; letter-spacing:.03em; }
+.sum-val   { font-size:17px; color:var(--ink); line-height:1.55; }
+
+/* Print */
+@media print {
+  .prog-wrap,.save-badge,.nav,.btn,
+  #screen-welcome,#screen-personal,#screen-written,
+  #screen-rec,#screen-rec-intro,#screen-mod-intro,
+  #screen-done,#screen-share { display:none !important; }
+  #screen-summary { display:block !important; padding:0; }
+  body { background:#fff !important; }
+  .print-hdr { border-bottom:2px solid #1A3D48; padding-bottom:14px; margin-bottom:20px; }
+  .print-hdr h1 { font-family:'Rubik',sans-serif; font-size:26px; color:#1A3D48; }
+  .print-hdr p  { font-size:12px; color:#666; margin-top:4px; }
+  .print-disc   { border-right:3px solid #7A5A10; padding:10px 14px; background:#FBF6EA; font-size:11px; color:#7A5A10; margin:12px 0 20px; line-height:1.7; }
+  .sum-mod   { page-break-inside:avoid; margin-bottom:22px; }
+  .sum-title { font-size:15px; border-bottom:2px solid #1A1A18; padding-bottom:6px; margin-bottom:10px; }
+  .sum-item  { margin-bottom:10px; padding-right:10px; border-right:2px solid #DDDBD6; }
+  .sum-lbl   { font-size:10px; color:#888; }
+  .sum-val   { font-size:13px; line-height:1.6; }
+  .print-foot{ margin-top:28px; padding-top:10px; border-top:1px solid #ccc; font-size:10px; color:#999; line-height:1.8; }
+}
+@media(max-width:420px){
+  .screen{padding:20px 18px 32px;}
+  .app-title{font-size:34px;}
+  .q-text{font-size:22px;}
+  .btn{font-size:17px;padding:17px;}
+  .chbtn,.cblabel{font-size:17px;}
+}
+
+
+/* Home button */
+.home-btn {
+  position:fixed; top:12px; right:14px;
+  background:var(--danger); color:#fff;
+  border:none; border-radius:20px;
+  padding:9px 16px 9px 12px;
+  font-family:'Rubik',sans-serif;
+  font-size:14px; font-weight:700;
+  cursor:pointer; z-index:250;
+  display:none; align-items:center; gap:5px;
+  box-shadow:0 2px 8px rgba(139,26,26,0.3);
+  transition:opacity .15s;
+  letter-spacing:0.01em;
+}
+.home-btn.show { display:flex; }
+.home-btn:hover  { opacity:.88; }
+.home-btn:active { opacity:.72; }
+</style>
+</head>
+<body>
+
+<div class="prog-wrap"><div class="prog-bar" id="progBar"></div></div>
+<div class="save-badge" id="saveBadge"><div class="save-dot"></div><span>נשמר</span></div>
+<button class="home-btn" id="homeBtn" onclick="confirmRestart()">
+  <span style="font-size:16px;line-height:1;">↺</span> התחלה מחדש
+</button>
+
+<!-- ══ WELCOME ══ -->
+<div class="screen active" id="screen-welcome">
+  <div class="wlc-top">
+    <div class="logo-ring">
+      <svg width="32" height="32" viewBox="0 0 32 32" fill="none">
+        <circle cx="16" cy="16" r="6" stroke="#1A3D48" stroke-width="2"/>
+        <line x1="16" y1="2"  x2="16" y2="10" stroke="#1A3D48" stroke-width="2" stroke-linecap="round"/>
+        <line x1="16" y1="22" x2="16" y2="30" stroke="#1A3D48" stroke-width="2" stroke-linecap="round"/>
+        <line x1="2"  y1="16" x2="10" y2="16" stroke="#1A3D48" stroke-width="2" stroke-linecap="round"/>
+        <line x1="22" y1="16" x2="30" y2="16" stroke="#1A3D48" stroke-width="2" stroke-linecap="round"/>
+        <circle cx="16" cy="16" r="2.5" fill="#1A3D48"/>
+      </svg>
+    </div>
+    <div class="divline"></div>
+    <h1 class="app-title">מצפן חיים</h1>
+    <p class="app-sub">תיעוד רצונותיך לעתיד<br>בצורה פשוטה וברורה</p>
+
+    <div style="background:var(--surface);border:1px solid var(--border);border-radius:var(--r);padding:18px 20px;margin-top:8px;text-align:right;max-width:420px;">
+      <p style="font-size:16px;color:var(--ink-mid);line-height:1.8;">
+        יש אנשים שנמנעים מהכנת ייפוי כוח מתמשך בשל עלות גבוהה או סיבות אחרות.
+        הכלי הזה יסייע לך להציג את רצונותיך לבני משפחה או לכל גורם אחר — בכתב ובוידאו.
+      </p>
+      <div style="margin-top:14px;padding-top:14px;border-top:1px solid var(--border);">
+        <p style="font-size:14px;font-weight:700;color:var(--danger);margin-bottom:6px;">⚠️ חשוב לדעת לפני שמתחילים:</p>
+        <p style="font-size:14px;color:var(--ink-mid);line-height:1.8;">
+          זהו <strong>אינו כלי משפטי</strong> ואינו מחליף ייפוי כוח מתמשך או צוואה.<br>
+          הוא אינו מבטיח שיתייחסו אליו כמסמך מחייב.<br>
+          יחד עם זאת — הכלי מאפשר <strong>תיעוד ושיתוף רצונותיך</strong> באופן כתוב ומצולם,
+          שעשוי לסייע מאוד למשפחה ולמטפלים.
+        </p>
+      </div>
+    </div>
+
+    <div class="priv-chip">המידע נשמר רק במכשיר שלך</div>
+  </div>
+  <div class="nav">
+    <button class="btn btn-primary" onclick="startFresh()">התחלה</button>
+    <button class="btn btn-secondary hidden" id="resumeBtn" onclick="resumeSession()">המשך מאיפה שהפסקתי</button>
+  </div>
+</div>
+
+<!-- ══ PERSONAL DETAILS ══ -->
+<div class="screen" id="screen-personal">
+  <div class="sec-hdr">
+    <div class="sec-num">א</div>
+    <h2 class="sec-title">פרטים אישיים</h2>
+  </div>
+  <p style="font-size:15px;color:var(--ink-lt);margin-bottom:20px;line-height:1.7;">
+    פרטים אלו יופיעו בראש המסמך הכתוב. שדה השם הוא חובה.
+  </p>
+  <div class="fg"><label>שם מלא *</label><input class="finput" id="pd-name" type="text" placeholder="שם פרטי ושם משפחה"></div>
+  <div class="fg"><label>תאריך לידה</label><input class="finput" id="pd-dob"  type="text" placeholder="יום / חודש / שנה"></div>
+  <div class="fg"><label>כתובת מגורים</label><input class="finput" id="pd-addr" type="text" placeholder="רחוב, עיר"></div>
+  <div class="fg"><label>תעודת זהות (אופציונלי)</label><input class="finput" id="pd-id"   type="text" placeholder="מספר ת.ז."></div>
+  <div class="fg"><label>טלפון</label><input class="finput" id="pd-tel"  type="tel"  placeholder="מספר טלפון"></div>
+  <div class="fg"><label>שם בן / בת זוג (אם רלוונטי)</label><input class="finput" id="pd-sp"   type="text" placeholder="שם"></div>
+  <div class="fg"><label>שמות ילדים (אופציונלי)</label><textarea class="finput" id="pd-kids" rows="2" placeholder="שמות ילדים, מופרדים בפסיק"></textarea></div>
+  <div class="nav">
+    <button class="btn btn-primary" onclick="savePD()">המשך לשאלות ←</button>
+    <button class="btn btn-secondary" onclick="showS('welcome')">חזרה</button>
+  </div>
+</div>
+
+<!-- ══ MODULE INTRO ══ -->
+<div class="screen" id="screen-mod-intro">
+  <div class="sp"></div>
+  <div class="ctr-icon" id="miIcon"></div>
+  <p style="text-align:center;font-size:13px;color:var(--ink-lt);margin-bottom:6px;" id="miNum"></p>
+  <h2 class="ctr-title" id="miTitle"></h2>
+  <p class="ctr-sub"    id="miDesc"></p>
+  <div class="sp"></div>
+  <div class="nav">
+    <button class="btn btn-primary" onclick="beginMod()">התחלה ←</button>
+    <button class="btn btn-secondary" onclick="backFromModIntro()">חזרה</button>
+  </div>
+</div>
+
+<!-- ══ WRITTEN QUESTION ══ -->
+<div class="screen" id="screen-written">
+  <div class="sec-hdr">
+    <div class="sec-num" id="wqBadge"></div>
+    <h2 class="sec-title" id="wqModTitle"></h2>
+  </div>
+  <div class="q-meta" id="wqMeta"></div>
+  <div class="q-text" id="wqText"></div>
+  <div class="q-note hidden" id="wqNote"></div>
+  <div id="wqContent"></div>
+  <div class="nav">
+    <button class="btn btn-primary" id="wqNext" onclick="nextWQ()">המשך ←</button>
+    <button class="btn btn-ghost hidden" id="wqSkip" onclick="skipWQ()">דלג על שאלה זו</button>
+    <button class="btn btn-secondary" onclick="prevWQ()" style="margin-top:8px;">חזרה</button>
+  </div>
+</div>
+
+<!-- ══ REC INTRO ══ -->
+<div class="screen" id="screen-rec-intro">
+  <div class="sp"></div>
+  <div class="ctr-icon">🎥</div>
+  <h2 class="ctr-title">הקלטת הוידאו</h2>
+  <p class="ctr-sub">
+    עכשיו נקליט סרטון אחד רציף.<br>
+    השאלות יופיעו על המסך אחת אחת.<br>
+    לחץ "שאלה הבאה" כשתסיים לענות.
+  </p>
+  <div class="card" style="margin-top:24px;text-align:right;">
+    <p style="font-size:16px;color:var(--ink-mid);line-height:2;">
+      • מקם/י עצמך מול המצלמה — בטלפון או במחשב<br>
+      • הביט/י ישר למצלמה<br>
+      • דבר/י בקצב נוח — אפשר לנשום בין השאלות<br>
+      • בסוף תוכל/י להוריד את הסרטון כקובץ אחד
+    </p>
+  </div>
+  <div class="sp"></div>
+  <div class="nav">
+    <button class="btn btn-primary"   onclick="startRecording()">התחל הקלטה</button>
+    <button class="btn btn-secondary" onclick="showS('summary')">דלג על ההקלטה — עבור לסיכום</button>
+    <button class="btn btn-ghost"     onclick="openModIntro(MODULES.length - 1)">חזרה לשאלות</button>
+  </div>
+</div>
+
+<!-- ══ RECORDING ══ -->
+<div class="screen" id="screen-rec">
+  <canvas id="recCanvas"></canvas>
+  <div class="rec-ui">
+    <div class="rec-controls">
+      <div style="display:flex;align-items:center;gap:10px;flex:1;">
+        <div class="rec-indicator"><div class="rec-dot"></div>מקליט</div>
+        <div class="rec-timer" id="recTimer">0:00</div>
+      </div>
+      <button class="rec-btn" style="background:#444;color:#fff;flex:0.7;" onclick="cancelRecording()">ביטול</button>
+      <button class="rec-btn rec-next" id="recNextBtn" onclick="recNextQ()">שאלה הבאה ←</button>
+      <button class="rec-btn rec-stop" onclick="stopRecording()">סיום</button>
+    </div>
+  </div>
+</div>
+
+<!-- ══ DONE ══ -->
+<div class="screen" id="screen-done">
+  <div class="sp"></div>
+  <div class="ctr-icon" style="font-size:22px;">✓</div>
+  <h2 class="ctr-title">סיימת</h2>
+  <p class="ctr-sub">כל המידע שלך נשמר.<br>אפשר עכשיו לצפות בסיכום ולשמור.</p>
+  <div class="sp"></div>
+  <div class="nav">
+    <button class="btn btn-primary" onclick="showSummary()">סיכום וסיום ←</button>
+  </div>
+</div>
+
+<!-- ══ SUMMARY ══ -->
+<div class="screen" id="screen-summary">
+  <!-- Print header (hidden on screen) -->
+  <div class="print-hdr" id="printHdr" style="display:none;">
+    <h1>מצפן חיים — הצהרת רצונות</h1>
+    <p id="printMeta"></p>
+    <div class="print-disc">
+      מסמך זה אינו מסמך משפטי מחייב. הוא מייצג את רצונותיו האישיים של הממלא
+      ונועד לסייע למשפחה ולמטפלים. כל המידע נשמר במכשיר הממלא בלבד ולא הועבר לאינטרנט.
+      הופק בהתאם לתיקון 13 לחוק הגנת הפרטיות.
+    </div>
+  </div>
+
+  <h2 style="font-family:'Rubik',sans-serif;font-size:24px;font-weight:700;margin-bottom:20px;">סיכום</h2>
+  <div id="sumContent"></div>
+  <div class="print-foot" id="printFoot" style="display:none;"></div>
+
+  <div class="nav">
+    <button class="btn btn-primary"   onclick="doPrint()">הדפס / שמור PDF</button>
+    <button class="btn btn-secondary" onclick="downloadVideo()">הורד סרטון וידאו</button>
+    <button class="btn btn-secondary" onclick="showS('share')">שתף עם המשפחה</button>
+  </div>
+</div>
+
+<!-- ══ SHARE ══ -->
+<div class="screen" id="screen-share">
+  <h2 style="font-family:'Rubik',sans-serif;font-size:22px;font-weight:700;margin-bottom:18px;">שיתוף עם המשפחה</h2>
+
+  <div class="infobox" style="border-right-color:#8B1A1A;">
+    <strong>שים לב לפני השליחה</strong><br><br>
+    המידע שאתה עומד לשלוח כולל פרטים אישיים רגישים.<br>
+    • עד עכשיו הכל היה שמור <strong>רק במכשיר שלך</strong><br>
+    • ברגע שתשלח — המידע יעבור לנמען שבחרת<br>
+    • שלח רק לאנשים שאתה סומך עליהם<br><br>
+    בהתאם לתיקון 13 לחוק הגנת הפרטיות — הזכות על המידע שלך היא שלך בלבד.
+  </div>
+
+  <div class="card" style="margin-bottom:16px;">
+    <p style="font-size:15px;font-weight:600;margin-bottom:12px;">מה לשלוח?</p>
+    <div class="cbrow on" id="cbShareReport" onclick="togShareOpt('Report')">
+      <div class="cbbox">✓</div>
+      <span class="cblabel">דוח כתוב (יופיע בגוף המייל)</span>
+    </div>
+    <div class="cbrow" id="cbShareVideo" onclick="togShareOpt('Video')">
+      <div class="cbbox"></div>
+      <span class="cblabel">קובץ וידאו (יורד למכשיר — צרף ידנית)</span>
+    </div>
+  </div>
+
+  <div class="fg">
+    <label>כתובת מייל</label>
+    <input class="finput" id="shareEmail" type="email" placeholder="example@email.com" dir="ltr">
+  </div>
+
+  <div id="shareConfirmArea" class="hidden">
+    <div class="okbox">אני מאשר/ת שאני בוחר/ת לשתף את המידע הזה מרצוני החופשי</div>
+    <button class="btn btn-primary" onclick="doEmail()">שלח במייל</button>
+    <button class="btn btn-secondary" onclick="doWhatsApp()" style="margin-top:10px;">שתף בוואטסאפ</button>
+  </div>
+  <button class="btn btn-primary" id="shareConfirmBtn" onclick="revealShare()">אני מאשר — המשך לשליחה</button>
+  <button class="btn btn-ghost" onclick="showSummary()" style="margin-top:10px;">חזרה לסיכום</button>
+</div>
+
+<script>
+/* ═══════════════════════════════════════════
+   MODULES DATA
+═══════════════════════════════════════════ */
+const MODULES = [
+  {
+    id:1, icon:"א", title:"מי אני",
+    desc:"כמה שאלות שיעזרו למשפחה להבין מי אתה",
+    questions:[
+      { id:"1.1", skip:false, text:"ספר קצת על עצמך — מי הם האנשים הקרובים אליך, מה עשית בחיים?",
+        type:"text", ph:"כתוב כאן או השאר ריק ועד בוידאו" },
+      { id:"1.2", skip:true,  text:"אם תצטרך לבחור דבר אחד שחשוב לך שלא ישתנה — מה הוא יהיה?",
+        type:"text", ph:"" }
+    ]
+  },
+  {
+    id:2, icon:"ב", title:"מגורים ואיכות חיים",
+    desc:"על המקום שבו תרגיש הכי טוב ומה חשוב לשמור",
+    questions:[
+      { id:"2.1", skip:false, text:"אם יום אחד תזדקק לעזרה — איפה היית רוצה לגור? במקרה ולא תוכל להחליט בעצמך.",
+        type:"choice",
+        choices:[{v:"home",icon:"🏠",l:"להישאר בבית שלי"},{v:"family",icon:"👨‍👩‍👧",l:"לגור עם משפחה"},{v:"facility",icon:"🏢",l:"מסגרת / דיור מוגן"},{v:"unsure",icon:"",l:"לא בטוח"}] },
+      { id:"2.2", skip:true, text:"מה חשוב לך שימשיך להיות חלק מהחיים שלך?",
+        type:"checks",
+        items:[{v:"music",l:"מוזיקה"},{v:"prayer",l:"תפילה / בית כנסת"},{v:"tv",l:"טלוויזיה"},{v:"paper",l:"עיתון"},{v:"outside",l:"יציאה החוצה"},{v:"family",l:"מפגש עם משפחה"},{v:"friends",l:"מפגש עם חברים"}],
+        hasOther:true },
+      { id:"2.3", skip:true, text:"אם תזדקק למטפל/ת — יש משהו חשוב לגביו/ה?",
+        type:"checks",
+        items:[
+          {v:"respect", l:"יחס מכבד ואדיב"},
+          {v:"lang_he",  l:"מטפל/ת דובר/ת עברית", hasField:true, ph:"עברית"},
+          {v:"lang_ar",  l:"מטפל/ת דובר/ת ערבית", hasField:true, ph:"ערבית"},
+          {v:"lang_ru",  l:"מטפל/ת דובר/ת רוסית", hasField:true, ph:"רוסית"},
+          {v:"lang_ot",  l:"שפה אחרת", hasField:true, ph:"ציין שפה..."},
+          {v:"female",   l:"מטפלת אישה"},
+          {v:"male",     l:"מטפל גבר"},
+          {v:"clean",    l:"ניקיון קפדני"},
+          {v:"cooking",  l:"בישול"}
+        ],
+        hasOther:true },
+      { id:"2.4", skip:true, text:"מה לא היית רוצה שיקרה — משהו שיגרום לך להרגיש שפגעו בכבוד שלך?",
+        type:"text", ph:"", note:"ענה אם מרגיש לך נכון — שאלה חשובה מאוד" }
+    ]
+  },
+  {
+    id:3, icon:"ג", title:"כסף ורכוש",
+    desc:"שאלות מעשיות שיעזרו למשפחה לדעת היכן הדברים",
+    questions:[
+      { id:"3.1", skip:false, text:"מי האדם שאתה סומך בו שינהל את הכסף שלך אם לא תוכל בעצמך?",
+        type:"persons" },
+      { id:"3.2", skip:true, text:"האם יש אדם נוסף שיפקח ויוודא שהכל מנוהל בסדר? זה יכול להיות אותו אדם שבחרת, או אחר.",
+        type:"persons" },
+      { id:"3.3", skip:true, text:"חשבונות בנק — פרט את חשבונות הבנק שלך",
+        type:"banks",
+        note:"מידע זה יעזור למשפחה לאתר את הכספים בעת הצורך" },
+      { id:"3.4", skip:true, text:"ביטוחים — פרט את הביטוחים שברשותך",
+        type:"insurances",
+        note:"ניתן לפרט חברה, מספר פוליסה וסוג ביטוח" },
+      { id:"3.5", skip:true, text:"נכסים — פרט את הנכסים שברשותך",
+        type:"properties" },
+      { id:"3.6", skip:true, text:"האם יש דברים שאתה רוצה שיגיעו לאנשים מסוימים — גם חפצים בעלי ערך רגשי?",
+        type:"text", ph:"" }
+    ]
+  },
+  {
+    id:4, icon:"ד", title:"החלטות רפואיות",
+    desc:"ענה רק על מה שמרגיש לך נכון — כל שאלה ניתנת לדילוג",
+    questions:[
+      { id:"4.1", skip:true, text:"מי היית רוצה שיהיה מעורב בהחלטות רפואיות עבורך?",
+        type:"persons" },
+      { id:"4.2", skip:true, text:"קופת חולים, רופא ומרפאה מועדפים",
+        type:"medical_prefs" },
+      { id:"4.3", skip:true, text:"מתי היית רוצה שהאדם שבחרת יתחיל לקבל החלטות עבורך?",
+        type:"choice",
+        choices:[{v:"full",l:"רק אם לא אוכל לתקשר בכלל"},{v:"help",l:"כבר כשארגיש שצריך עזרה"},{v:"unsure",l:"לא בטוח"}] },
+      { id:"4.4", skip:true, text:"מה חשוב לך יותר — להאריך חיים בכל מחיר, או שהחיים יהיו נוחים ומכבדים גם אם קצרים יותר?",
+        type:"choice",
+        choices:[{v:"extend",l:"להאריך חיים בכל מחיר"},{v:"quality",l:"חיים נוחים ומכבדים גם אם קצרים"},{v:"depends",l:"תלוי במצב"},{v:"unsure",l:"לא בטוח"}] },
+      { id:"4.5", skip:true, text:"מה מפחיד אותך יותר מכל לגבי מחלה או חולשה — כאב, בדידות, אובדן עצמאות?",
+        type:"text", ph:"" },
+      { id:"4.6", skip:true, text:"האם יש מצב שבו היית רוצה שיפסיקו לטפל בך?",
+        type:"text", ph:"", note:"לא חייבים לענות על שאלה זו" }
+    ]
+  },
+  {
+    id:5, icon:"ה", title:"מסר אישי",
+    desc:"מדבר ישירות למשפחה שלך",
+    questions:[
+      { id:"5.1", skip:true, text:"מה היית רוצה שהמשפחה שלך תדע — דברים שאולי לא אמרת?",
+        type:"text", ph:"" },
+      { id:"5.2", skip:true, text:"האם יש מישהו שהיית מעדיף שלא יהיה מעורב בהחלטות לגביך?",
+        type:"text", ph:"ניתן לכתוב כאן...", note:"לא חייבים לענות על שאלה זו", sensitive:true },
+      { id:"5.3", skip:true, text:"יש משהו חשוב לגבי הלוויה, הקבורה, או מנהגי אבל שהיית רוצה לציין?",
+        type:"text", ph:"" },
+      { id:"5.4", skip:true, text:"איך היית רוצה שיזכרו אותך?",
+        type:"text", ph:"" }
+    ]
+  }
+];
+
+// Flat list of all questions for video overlay
+const ALL_QUESTIONS = MODULES.flatMap(m => m.questions.map(q => ({...q, modTitle: m.title, modId: m.id})));
+
+/* ═══════════════════════════════════════════
+   STATE
+═══════════════════════════════════════════ */
+let S = {
+  curMod:0, curQ:0,
+  pd:{},
+  answers:{},   // qId → {choice, checks, textFields, otherText, text, persons}
+  hasVideo:false,
+  include52:false
+};
+
+/* ═══════════════════════════════════════════
+   INDEXEDDB
+═══════════════════════════════════════════ */
+let db = null;
+
+async function initDB() {
+  return new Promise((res,rej) => {
+    const r = indexedDB.open('MatzpenV2', 1);
+    r.onupgradeneeded = e => {
+      const d = e.target.result;
+      if (!d.objectStoreNames.contains('kv'))  d.createObjectStore('kv');
+      if (!d.objectStoreNames.contains('vid')) d.createObjectStore('vid');
+    };
+    r.onsuccess = e => { db = e.target.result; res(); };
+    r.onerror   = rej;
+  });
+}
+
+function dbSet(key, val) {
+  if (!db) return;
+  db.transaction('kv','readwrite').objectStore('kv').put(JSON.stringify(val), key);
+  flashSave();
+}
+
+function dbGet(key) {
+  return new Promise(res => {
+    if (!db) { res(null); return; }
+    const r = db.transaction('kv','readonly').objectStore('kv').get(key);
+    r.onsuccess = e => { try { res(e.target.result ? JSON.parse(e.target.result) : null); } catch { res(null); } };
+    r.onerror   = () => res(null);
+  });
+}
+
+function dbSaveVideo(blob) {
+  return new Promise((res,rej) => {
+    if (!db) { rej(); return; }
+    const tx = db.transaction('vid','readwrite');
+    tx.objectStore('vid').put(blob, 'main');
+    tx.oncomplete = res; tx.onerror = rej;
+  });
+}
+
+function dbGetVideo() {
+  return new Promise(res => {
+    if (!db) { res(null); return; }
+    const r = db.transaction('vid','readonly').objectStore('vid').get('main');
+    r.onsuccess = e => res(e.target.result || null);
+    r.onerror   = () => res(null);
+  });
+}
+
+function saveState() { dbSet('state', S); }
+
+async function loadState() {
+  const saved = await dbGet('state');
+  if (saved) S = {...S, ...saved};
+  const vid = await dbGetVideo();
+  if (vid) S.hasVideo = true;
+}
+
+/* ═══════════════════════════════════════════
+   UI UTILS
+═══════════════════════════════════════════ */
+function showS(id) {
+  document.querySelectorAll('.screen').forEach(s => s.classList.remove('active'));
+  const el = document.getElementById('screen-' + id);
+  if (el) { el.classList.add('active'); window.scrollTo(0,0); }
+  // Show home button on all screens except welcome
+  const homeBtn = document.getElementById('homeBtn');
+  if (homeBtn) homeBtn.classList.toggle('show', id !== 'welcome');
+  updateProg();
+}
+
+function confirmRestart() {
+  if (confirm('להתחיל מחדש? כל המידע שהוזן יימחק.')) {
+    startFresh();
+  }
+}
+
+function flashSave() {
+  const el = document.getElementById('saveBadge');
+  el.classList.add('on');
+  setTimeout(() => el.classList.remove('on'), 1800);
+}
+
+function updateProg() {
+  const total = MODULES.reduce((a,m) => a + m.questions.length, 0);
+  const done  = Object.keys(S.answers).length;
+  document.getElementById('progBar').style.width = Math.min(100, Math.round(done/total*100)) + '%';
+}
+
+/* ═══════════════════════════════════════════
+   NAVIGATION
+═══════════════════════════════════════════ */
+async function startFresh() {
+  S = { curMod:0, curQ:0, pd:{}, answers:{}, hasVideo:false, include52:false };
+  saveState();
+  showS('personal');
+}
+
+async function resumeSession() {
+  await loadState();
+  openModIntro(S.curMod);
+}
+
+function savePD() {
+  const name = document.getElementById('pd-name').value.trim();
+  if (!name) { alert('אנא הכנס שם מלא'); return; }
+  S.pd = {
+    name, dob:  document.getElementById('pd-dob').value,
+    addr: document.getElementById('pd-addr').value,
+    id:   document.getElementById('pd-id').value,
+    tel:  document.getElementById('pd-tel').value,
+    sp:   document.getElementById('pd-sp').value,
+    kids: document.getElementById('pd-kids').value
+  };
+  saveState();
+  openModIntro(0);
+}
+
+function openModIntro(idx) {
+  const mod = MODULES[idx];
+  if (!mod) { showS('rec-intro'); return; }
+  S.curMod = idx; S.curQ = 0; saveState();
+  document.getElementById('miIcon').textContent  = mod.icon;
+  document.getElementById('miNum').textContent   = `מודול ${idx+1} מתוך ${MODULES.length}`;
+  document.getElementById('miTitle').textContent = mod.title;
+  document.getElementById('miDesc').textContent  = mod.desc;
+  showS('mod-intro');
+}
+
+function beginMod()        { openQuestion(S.curMod, 0); }
+function backFromModIntro(){ S.curMod === 0 ? showS('personal') : openModIntro(S.curMod - 1); }
+
+function openQuestion(mIdx, qIdx) {
+  const mod = MODULES[mIdx];
+  if (!mod) { showS('rec-intro'); return; }
+  const qs = mod.questions;
+  if (qIdx >= qs.length) {
+    const next = mIdx + 1;
+    if (next < MODULES.length) openModIntro(next);
+    else showS('rec-intro');
+    return;
+  }
+  S.curMod = mIdx; S.curQ = qIdx; saveState();
+  const q = qs[qIdx];
+
+  document.getElementById('wqBadge').textContent    = mod.icon;
+  document.getElementById('wqModTitle').textContent = mod.title;
+  document.getElementById('wqMeta').textContent     = `שאלה ${qIdx+1} מתוך ${qs.length}`;
+  document.getElementById('wqText').textContent     = q.text;
+
+  const noteEl = document.getElementById('wqNote');
+  if (q.note) {
+    noteEl.textContent = q.note;
+    noteEl.classList.remove('hidden');
+  } else {
+    noteEl.textContent = '';
+    noteEl.classList.add('hidden');
+  }
+
+  document.getElementById('wqSkip').classList.toggle('hidden', !q.skip);
+  renderWQ(q);
+  showS('written');
+}
+
+function nextWQ() {
+  const q = MODULES[S.curMod].questions[S.curQ];
+  if (!q.skip && q.type === 'choice' && !S.answers[q.id]?.choice) {
+    alert('אנא בחר אחת מהאפשרויות'); return;
+  }
+  openQuestion(S.curMod, S.curQ + 1);
+}
+
+function skipWQ() { openQuestion(S.curMod, S.curQ + 1); }
+
+function prevWQ() {
+  if (S.curQ === 0) openModIntro(S.curMod);
+  else openQuestion(S.curMod, S.curQ - 1);
+}
+
+/* ═══════════════════════════════════════════
+   RENDER WRITTEN QUESTION
+═══════════════════════════════════════════ */
+function renderWQ(q) {
+  const c = document.getElementById('wqContent');
+  const a = S.answers[q.id] || {};
+  let html = '';
+
+  if (q.type === 'text') {
+    html = `<textarea class="finput" id="ta-${q.id}" placeholder="${q.ph||''}"
+      oninput="saveText('${q.id}',this.value)"
+      style="min-height:110px;">${a.text||''}</textarea>`;
+  }
+  else if (q.type === 'choice') {
+    html = `<div class="choices">${q.choices.map(ch => `
+      <button class="chbtn ${a.choice===ch.v?'sel':''}" onclick="selChoice('${q.id}','${ch.v}',this)">
+        ${ch.icon?`<span class="ch-ico">${ch.icon}</span>`:''}${ch.l}
+      </button>`).join('')}</div>`;
+  }
+  else if (q.type === 'checks') {
+    html = `<div>${q.items.map(it => `
+      <div class="cbrow ${(a.checks||[]).includes(it.v)?'on':''}" onclick="togCb('${q.id}','${it.v}',this)" id="cbr-${q.id}-${it.v}">
+        <div class="cbbox">${(a.checks||[]).includes(it.v)?'✓':''}</div>
+        <span class="cblabel">${it.l}</span>
+      </div>
+      ${it.hasField?`<input class="finput" id="tf-${q.id}-${it.v}" placeholder="${it.ph||''}"
+        value="${(a.textFields||{})[it.v]||''}"
+        style="${(a.checks||[]).includes(it.v)?'':'display:none;'}margin-bottom:8px;"
+        oninput="saveTF('${q.id}','${it.v}',this.value)">`:''}
+      ${q.withFields&&it.v!==undefined?`<input class="finput" id="wf-${q.id}-${it.v}" placeholder="היכן בדיוק?"
+        value="${(a.textFields||{})[it.v]||''}"
+        style="${q.withFields&&(a.checks||[]).includes(it.v)?'':'display:none;'}margin-bottom:8px;"
+        oninput="saveTF('${q.id}','${it.v}',this.value)">`:''}
+    `).join('')}
+    ${q.hasOther?`
+      <div class="cbrow ${(a.checks||[]).includes('other')?'on':''}" onclick="togCb('${q.id}','other',this)">
+        <div class="cbbox">${(a.checks||[]).includes('other')?'✓':''}</div>
+        <span class="cblabel">אחר</span>
+      </div>
+      <input class="finput" id="tf-${q.id}-other" placeholder="פרט כאן..."
+        value="${a.otherText||''}"
+        style="${(a.checks||[]).includes('other')?'':'display:none;'}margin-bottom:8px;"
+        oninput="saveOther('${q.id}',this.value)">`:''}
+    </div>`;
+  }
+  else if (q.type === 'medical_prefs') {
+    const a2 = S.answers[q.id] || {};
+    html = `
+      <div class="fg">
+        <label style="font-size:16px;font-weight:700;margin-bottom:10px;display:block;">קופת חולים</label>
+        <div class="choices" id="kp-choices">
+          ${['כללית','מכבי','לאומית','מאוחדת'].map(v => `
+            <button class="chbtn ${a2.kupat===v?'sel':''}" onclick="selKupat('${q.id}','${v}',this)">${v}</button>
+          `).join('')}
+          <button class="chbtn ${a2.kupat==='other'?'sel':''}" onclick="selKupat('${q.id}','other',this)">אחר</button>
+        </div>
+        <input class="finput" id="kupat-other-${q.id}" placeholder="שם קופת חולים..."
+          value="${a2.kupatOther||''}"
+          style="${a2.kupat==='other'?'':'display:none;'}margin-top:8px;"
+          oninput="saveMedField('${q.id}','kupatOther',this.value)">
+      </div>
+      <div class="fg">
+        <label>שם הרופא/ה המטפל/ת</label>
+        <input class="finput" placeholder="שם הרופא" value="${a2.doctor||''}"
+          oninput="saveMedField('${q.id}','doctor',this.value)">
+      </div>
+      <div class="fg">
+        <label>שם המרפאה / בית החולים המועדף</label>
+        <input class="finput" placeholder="שם המרפאה או בית החולים" value="${a2.clinic||''}"
+          oninput="saveMedField('${q.id}','clinic',this.value)">
+      </div>`;
+  }
+  else if (q.type === 'persons') {
+    const persons = a.persons || [{name:'',rel:''}];
+    html = `<div id="plist-${q.id}">${persons.map((p,i) => pFields(q.id,i,p)).join('')}</div>
+      <button class="btn-dashed" onclick="addPerson('${q.id}')" style="margin-top:4px;">+ הוסף אדם נוסף</button>`;
+  }
+  else if (q.type === 'banks') {
+    const banks = (S.answers[q.id]?.banks) || [{name:'',branch:'',account:''}];
+    html = `<div id="banks-${q.id}">
+      ${banks.map((b,i) => bankFields(q.id,i,b)).join('')}
+    </div>
+    <button class="btn-dashed" onclick="addBank('${q.id}')" style="margin-top:4px;">+ הוסף חשבון נוסף</button>`;
+  }
+  else if (q.type === 'insurances') {
+    const insList = (S.answers[q.id]?.insurances) || [{company:'',policy:'',instype:''}];
+    html = `<div id="ins-${q.id}">
+      ${insList.map((ins,i) => insFields(q.id,i,ins)).join('')}
+    </div>
+    <button class="btn-dashed" onclick="addIns('${q.id}')" style="margin-top:4px;">+ הוסף ביטוח נוסף</button>`;
+  }
+  else if (q.type === 'properties') {
+    const props = (S.answers[q.id]?.properties) || [{desc:'',location:'',note:''}];
+    html = `<div id="props-${q.id}">
+      ${props.map((p,i) => propFields(q.id,i,p)).join('')}
+    </div>
+    <button class="btn-dashed" onclick="addProp('${q.id}')" style="margin-top:4px;">+ הוסף נכס נוסף</button>`;
+  }
+
+  c.innerHTML = html;
+}
+
+function bankFields(qId, i, b={}) {
+  return `<div class="pcard" id="bank-${qId}-${i}">
+    <p style="font-size:13px;color:var(--ink-lt);margin-bottom:10px;">חשבון ${i+1}</p>
+    <div class="fg"><label>שם הבנק</label><input class="finput" placeholder="למשל: בנק הפועלים" value="${b.name||''}" oninput="saveBank('${qId}',${i},'name',this.value)"></div>
+    <div class="fg"><label>מספר סניף</label><input class="finput" placeholder="מספר סניף" value="${b.branch||''}" oninput="saveBank('${qId}',${i},'branch',this.value)"></div>
+    <div class="fg" style="margin-bottom:0;"><label>מספר חשבון</label><input class="finput" placeholder="מספר חשבון" value="${b.account||''}" oninput="saveBank('${qId}',${i},'account',this.value)"></div>
+  </div>`;
+}
+
+function insFields(qId, i, ins={}) {
+  return `<div class="pcard" id="ins-${qId}-${i}">
+    <p style="font-size:13px;color:var(--ink-lt);margin-bottom:10px;">ביטוח ${i+1}</p>
+    <div class="fg"><label>שם חברת הביטוח</label><input class="finput" placeholder="למשל: מגדל, הראל..." value="${ins.company||''}" oninput="saveIns('${qId}',${i},'company',this.value)"></div>
+    <div class="fg"><label>סוג הביטוח</label><input class="finput" placeholder="למשל: חיים, בריאות, סיעודי..." value="${ins.instype||''}" oninput="saveIns('${qId}',${i},'instype',this.value)"></div>
+    <div class="fg" style="margin-bottom:0;"><label>מספר פוליסה (אופציונלי)</label><input class="finput" placeholder="מספר פוליסה" value="${ins.policy||''}" oninput="saveIns('${qId}',${i},'policy',this.value)"></div>
+  </div>`;
+}
+
+function propFields(qId, i, p={}) {
+  return `<div class="pcard" id="prop-${qId}-${i}">
+    <p style="font-size:13px;color:var(--ink-lt);margin-bottom:10px;">נכס ${i+1}</p>
+    <div class="fg"><label>תיאור הנכס</label><input class="finput" placeholder="למשל: דירה, חיסכון, קרן פנסיה..." value="${p.desc||''}" oninput="saveProp('${qId}',${i},'desc',this.value)"></div>
+    <div class="fg"><label>מיקום / פרטים</label><input class="finput" placeholder="כתובת, שם הגוף המנהל..." value="${p.location||''}" oninput="saveProp('${qId}',${i},'location',this.value)"></div>
+    <div class="fg" style="margin-bottom:0;"><label>הערה (אופציונלי)</label><input class="finput" placeholder="מה חשוב לך שיקרה עם הנכס?" value="${p.note||''}" oninput="saveProp('${qId}',${i},'note',this.value)"></div>
+  </div>`;
+}
+
+function selKupat(qId, val, btn) {
+  btn.closest('.choices').querySelectorAll('.chbtn').forEach(b => b.classList.remove('sel'));
+  btn.classList.add('sel');
+  ea(qId); S.answers[qId].kupat = val;
+  const otherInput = document.getElementById(`kupat-other-${qId}`);
+  if (otherInput) otherInput.style.display = val === 'other' ? 'block' : 'none';
+  saveState();
+}
+function saveMedField(qId, field, val) { ea(qId); S.answers[qId][field] = val; saveState(); }
+
+function cancelRecording() {
+  if (!confirm('לבטל את ההקלטה ולחזור?')) return;
+  if (mediaRec && mediaRec.state !== 'inactive') {
+    mediaRec.ondataavailable = null;
+    mediaRec.onstop = null;
+    mediaRec.stop();
+  }
+  cancelAnimationFrame(recAF);
+  clearInterval(recTimerInterval);
+  if (camStream) { camStream.getTracks().forEach(t => t.stop()); camStream = null; }
+  recChunks = [];
+  showS('rec-intro');
+}
+
+function saveBank(qId, i, field, val) {
+  ea(qId); if(!S.answers[qId].banks) S.answers[qId].banks=[{}];
+  if(!S.answers[qId].banks[i]) S.answers[qId].banks[i]={};
+  S.answers[qId].banks[i][field]=val; saveState();
+}
+function addBank(qId) {
+  ea(qId); if(!S.answers[qId].banks) S.answers[qId].banks=[{}];
+  S.answers[qId].banks.push({name:'',branch:'',account:''});
+  const i = S.answers[qId].banks.length-1;
+  document.getElementById(`banks-${qId}`).insertAdjacentHTML('beforeend', bankFields(qId,i));
+  saveState();
+}
+
+function saveIns(qId, i, field, val) {
+  ea(qId); if(!S.answers[qId].insurances) S.answers[qId].insurances=[{}];
+  if(!S.answers[qId].insurances[i]) S.answers[qId].insurances[i]={};
+  S.answers[qId].insurances[i][field]=val; saveState();
+}
+function addIns(qId) {
+  ea(qId); if(!S.answers[qId].insurances) S.answers[qId].insurances=[{}];
+  S.answers[qId].insurances.push({company:'',policy:'',instype:''});
+  const i = S.answers[qId].insurances.length-1;
+  document.getElementById(`ins-${qId}`).insertAdjacentHTML('beforeend', insFields(qId,i));
+  saveState();
+}
+
+function saveProp(qId, i, field, val) {
+  ea(qId); if(!S.answers[qId].properties) S.answers[qId].properties=[{}];
+  if(!S.answers[qId].properties[i]) S.answers[qId].properties[i]={};
+  S.answers[qId].properties[i][field]=val; saveState();
+}
+function addProp(qId) {
+  ea(qId); if(!S.answers[qId].properties) S.answers[qId].properties=[{}];
+  S.answers[qId].properties.push({desc:'',location:'',note:''});
+  const i = S.answers[qId].properties.length-1;
+  document.getElementById(`props-${qId}`).insertAdjacentHTML('beforeend', propFields(qId,i));
+  saveState();
+}
+
+function pFields(qId, i, p={}) {
+  return `<div class="pcard">
+    <div class="fg"><label>שם</label>
+      <input class="finput" placeholder="שם מלא" value="${p.name||''}" oninput="saveP('${qId}',${i},'name',this.value)">
+    </div>
+    <div class="fg" style="margin-bottom:0;"><label>קשר</label>
+      <input class="finput" placeholder="בן/בת, אח, חבר..." value="${p.rel||''}" oninput="saveP('${qId}',${i},'rel',this.value)">
+    </div>
+  </div>`;
+}
+
+/* ═══════════════════════════════════════════
+   ANSWER SAVING
+═══════════════════════════════════════════ */
+function ea(id) { if (!S.answers[id]) S.answers[id] = {}; }
+
+function selChoice(qId, val, btn) {
+  document.querySelectorAll(`[id^="wqContent"] .chbtn, #wqContent .chbtn`).forEach(b => b.classList.remove('sel'));
+  // re-select properly
+  btn.closest('.choices').querySelectorAll('.chbtn').forEach(b => b.classList.remove('sel'));
+  btn.classList.add('sel');
+  ea(qId); S.answers[qId].choice = val; saveState();
+}
+
+function togCb(qId, val, el) {
+  ea(qId);
+  if (!S.answers[qId].checks) S.answers[qId].checks = [];
+  const idx = S.answers[qId].checks.indexOf(val);
+  if (idx === -1) {
+    S.answers[qId].checks.push(val);
+    el.classList.add('on'); el.querySelector('.cbbox').textContent = '✓';
+    const tf = document.getElementById(`tf-${qId}-${val}`) || document.getElementById(`wf-${qId}-${val}`);
+    if (tf) tf.style.display = 'block';
+  } else {
+    S.answers[qId].checks.splice(idx,1);
+    el.classList.remove('on'); el.querySelector('.cbbox').textContent = '';
+    const tf = document.getElementById(`tf-${qId}-${val}`) || document.getElementById(`wf-${qId}-${val}`);
+    if (tf) tf.style.display = 'none';
+  }
+  saveState();
+}
+
+function saveTF(qId, v, txt) { ea(qId); if(!S.answers[qId].textFields) S.answers[qId].textFields={}; S.answers[qId].textFields[v]=txt; saveState(); }
+function saveOther(qId, txt) { ea(qId); S.answers[qId].otherText = txt; saveState(); }
+function saveText(qId, txt)  { ea(qId); S.answers[qId].text = txt; saveState(); }
+function saveP(qId, i, field, val) {
+  ea(qId);
+  if (!S.answers[qId].persons) S.answers[qId].persons = [{}];
+  if (!S.answers[qId].persons[i]) S.answers[qId].persons[i] = {};
+  S.answers[qId].persons[i][field] = val; saveState();
+}
+function addPerson(qId) {
+  ea(qId);
+  if (!S.answers[qId].persons) S.answers[qId].persons = [{}];
+  S.answers[qId].persons.push({name:'',rel:''});
+  const i = S.answers[qId].persons.length - 1;
+  document.getElementById(`plist-${qId}`).insertAdjacentHTML('beforeend', pFields(qId, i));
+  saveState();
+}
+
+/* ═══════════════════════════════════════════
+   VIDEO RECORDING — CANVAS OVERLAY
+═══════════════════════════════════════════ */
+let camStream = null, mediaRec = null, recChunks = [];
+let recQIdx = 0, recAF = null, recStartTime = 0, recTimerInterval = null;
+const recCanvas = document.getElementById('recCanvas');
+const recCtx    = recCanvas.getContext('2d');
+let camVideo    = null;
+
+function getMime() {
+  const types = ['video/webm;codecs=vp9,opus','video/webm;codecs=vp8,opus','video/webm','video/mp4',''];
+  for (const t of types) { try { if (!t || MediaRecorder.isTypeSupported(t)) return t; } catch{} }
+  return '';
+}
+
+function drawRecFrame() {
+  const W = recCanvas.width, H = recCanvas.height;
+  if (camVideo && camVideo.readyState >= 2) {
+    recCtx.drawImage(camVideo, 0, 0, W, H);
+  } else {
+    recCtx.fillStyle = '#111'; recCtx.fillRect(0,0,W,H);
+  }
+
+  const q = ALL_QUESTIONS[recQIdx];
+  if (q) {
+    // Measure text to determine bar height
+    const metaSize = Math.round(H * 0.034);
+    const textSize = Math.round(H * 0.058);
+    const pad      = Math.round(H * 0.028);
+    const lh       = Math.round(textSize * 1.35);
+
+    // Wrap question text
+    recCtx.font = `bold ${textSize}px Heebo, sans-serif`;
+    recCtx.direction = 'rtl'; recCtx.textAlign = 'right';
+    const maxW = W - pad * 2;
+    const words = q.text.split(' ');
+    let line = '', lines = [];
+    for (const word of words) {
+      const test = line ? word + ' ' + line : word;
+      if (recCtx.measureText(test).width > maxW && line) { lines.push(line); line = word; }
+      else line = test;
+    }
+    if (line) lines.push(line);
+    lines = lines.slice(0, 3);
+
+    const barH = pad + metaSize + pad * 0.5 + lines.length * lh + pad;
+
+    // Semi-transparent dark bar at TOP
+    recCtx.fillStyle = 'rgba(15, 35, 45, 0.92)';
+    recCtx.fillRect(0, 0, W, barH);
+
+    // Accent left border line
+    recCtx.fillStyle = '#4A9BB0';
+    recCtx.fillRect(0, 0, Math.round(W * 0.008), barH);
+
+    // Meta label
+    const modLabel = `${q.modTitle}  ·  שאלה ${recQIdx + 1} מתוך ${ALL_QUESTIONS.length}`;
+    recCtx.font = `${metaSize}px Heebo, sans-serif`;
+    recCtx.fillStyle = 'rgba(255,255,255,0.55)';
+    recCtx.fillText(modLabel, W - pad, pad + metaSize * 0.85);
+
+    // Question text lines
+    recCtx.font = `bold ${textSize}px Heebo, sans-serif`;
+    recCtx.fillStyle = '#FFFFFF';
+    const textStartY = pad + metaSize + pad * 0.6;
+    lines.forEach((l, i) => {
+      recCtx.fillText(l, W - pad, textStartY + i * lh);
+    });
+
+    // REC dot (top-left of bar)
+    const now = Date.now();
+    if (Math.floor((now - recStartTime) / 500) % 2 === 0) {
+      recCtx.fillStyle = '#FF4444';
+      recCtx.beginPath();
+      recCtx.arc(pad * 1.2, barH / 2, Math.round(H * 0.016), 0, Math.PI * 2);
+      recCtx.fill();
+    }
+  }
+
+  recAF = requestAnimationFrame(drawRecFrame);
+}
+
+async function startRecording() {
+  if (!navigator.mediaDevices?.getUserMedia) {
+    alert('הדפדפן אינו תומך בהקלטת וידאו. נסה כרום עדכני.'); return;
+  }
+  if (typeof MediaRecorder === 'undefined') {
+    alert('הדפדפן אינו תומך ב-MediaRecorder.'); return;
+  }
+
+  // Check for any existing camera permission issue
+  const btn = document.querySelector('#screen-rec-intro .btn-primary');
+  if (btn) { btn.textContent = 'מבקש גישה למצלמה...'; btn.disabled = true; }
+
+  try {
+    camStream = await navigator.mediaDevices.getUserMedia({
+      video:{ facingMode:'user', width:{ideal:1280}, height:{ideal:720} },
+      audio:true
+    });
+  } catch(e) {
+    if (btn) { btn.textContent = 'התחל הקלטה'; btn.disabled = false; }
+    if (e.name === 'NotAllowedError')  { alert('לא אושרה גישה למצלמה. אשר הרשאה ונסה שוב.'); return; }
+    if (e.name === 'NotFoundError')    { alert('לא נמצאה מצלמה.'); return; }
+    if (e.name === 'NotReadableError') { alert('המצלמה בשימוש בתוכנה אחרת.'); return; }
+    alert('שגיאה: ' + e.message); return;
+  }
+
+  // Setup canvas size from stream
+  const track    = camStream.getVideoTracks()[0];
+  const settings = track.getSettings();
+  recCanvas.width  = settings.width  || 1280;
+  recCanvas.height = settings.height || 720;
+
+  // Hidden video element to draw from
+  camVideo = document.createElement('video');
+  camVideo.srcObject = camStream; camVideo.muted = true;
+  camVideo.setAttribute('playsinline',''); camVideo.play();
+
+  // Canvas stream for recording
+  const fps          = 30;
+  const canvasStream = recCanvas.captureStream(fps);
+
+  // Add audio track from camera
+  camStream.getAudioTracks().forEach(t => canvasStream.addTrack(t));
+
+  recQIdx = 0; recChunks = []; recStartTime = Date.now();
+  const mime = getMime();
+
+  try {
+    mediaRec = mime ? new MediaRecorder(canvasStream, {mimeType:mime}) : new MediaRecorder(canvasStream);
+  } catch { mediaRec = new MediaRecorder(canvasStream); }
+
+  const actualMime = mediaRec.mimeType || 'video/webm';
+
+  mediaRec.ondataavailable = e => { if (e.data.size > 0) recChunks.push(e.data); };
+  mediaRec.onstop = async () => {
+    cancelAnimationFrame(recAF);
+    clearInterval(recTimerInterval);
+    camStream.getTracks().forEach(t => t.stop());
+    camStream = null;
+
+    const blob = new Blob(recChunks, {type: actualMime});
+    await dbSaveVideo(blob);
+    S.hasVideo = true; saveState();
+    showS('done');
+  };
+
+  // Start drawing and recording
+  recAF = requestAnimationFrame(drawRecFrame);
+  mediaRec.start(1000);
+
+  // Update UI question display
+  updateRecUI();
+
+  // Timer
+  recTimerInterval = setInterval(() => {
+    const s = Math.floor((Date.now() - recStartTime) / 1000);
+    document.getElementById('recTimer').textContent =
+      `${Math.floor(s/60)}:${String(s%60).padStart(2,'0')}`;
+  }, 1000);
+
+  showS('rec');
+}
+
+function updateRecUI() {
+  const q = ALL_QUESTIONS[recQIdx];
+  if (!q) return;
+  const nextBtn = document.getElementById('recNextBtn');
+  if (nextBtn) nextBtn.textContent = recQIdx >= ALL_QUESTIONS.length - 1 ? 'סיום ←' : 'שאלה הבאה ←';
+}
+
+function recNextQ() {
+  if (recQIdx >= ALL_QUESTIONS.length - 1) { stopRecording(); return; }
+  recQIdx++;
+  updateRecUI();
+}
+
+function stopRecording() {
+  if (mediaRec && mediaRec.state !== 'inactive') mediaRec.stop();
+}
+
+/* ═══════════════════════════════════════════
+   SUMMARY + PRINT
+═══════════════════════════════════════════ */
+const CHOICE_L = {
+  home:'להישאר בבית', family:'עם משפחה', facility:'מסגרת/דיור מוגן',
+  full:'רק אם לא אוכל לתקשר', help:'כשארגיש שצריך עזרה',
+  extend:'להאריך חיים בכל מחיר', quality:'חיים נוחים ומכבדים', depends:'תלוי במצב', unsure:'לא בטוח'
+};
+
+function showSummary() {
+  const c = document.getElementById('sumContent');
+  let html = '';
+
+  // Personal
+  const pd = S.pd;
+  html += `<div class="sum-mod"><div class="sum-title">פרטים אישיים</div>`;
+  [['name','שם'],['dob','תאריך לידה'],['addr','כתובת'],['tel','טלפון'],['sp','בן/בת זוג'],['kids','ילדים']]
+    .forEach(([k,l]) => { if (pd[k]) html += `<div class="sum-item"><div class="sum-lbl">${l}</div><div class="sum-val">${pd[k]}</div></div>`; });
+  html += `</div>`;
+
+  MODULES.forEach(mod => {
+    let inner = '';
+    mod.questions.forEach(q => {
+      if (q.sensitive && !S.include52) return;
+      const a = S.answers[q.id];
+      if (!a) return;
+      let val = '';
+      if (a.choice)   val += `<strong>${CHOICE_L[a.choice] || a.choice}</strong>`;
+      if (a.checks?.length) {
+        const ls = a.checks.map(v => q.items?.find(i=>i.v===v)?.l || v);
+        val += ls.join('، ');
+        if (a.otherText) val += ` (${a.otherText})`;
+        if (a.textFields) Object.entries(a.textFields).forEach(([k,v]) => { if(v) val += ` [${v}]`; });
+      }
+      if (a.kupat)  val += `קופ"ח: ${a.kupat === 'other' ? (a.kupatOther||'אחר') : a.kupat}`;
+      if (a.doctor) val += (val?'  |  ':'') + `רופא/ה: ${a.doctor}`;
+      if (a.clinic) val += (val?'  |  ':'') + `מרפאה: ${a.clinic}`;
+      if (a.text)   val += a.text;
+      if (a.persons?.length) val += a.persons.filter(p=>p.name).map(p=>`${p.name}${p.rel?' ('+p.rel+')':''}`).join('، ');
+      if (a.banks?.length) val += a.banks.filter(b=>b.name||b.account).map(b=>`${b.name||''}${b.branch?' סניף '+b.branch:''}${b.account?' | חשבון: '+b.account:''}`).join('<br>');
+      if (a.insurances?.length) val += a.insurances.filter(i=>i.company||i.instype).map(i=>`${i.company||''} — ${i.instype||''}${i.policy?' | פוליסה: '+i.policy:''}`).join('<br>');
+      if (a.properties?.length) val += a.properties.filter(p=>p.desc).map(p=>`${p.desc}${p.location?' — '+p.location:''}${p.note?' ('+p.note+')':''}`).join('<br>');
+      if (!val.trim()) return;
+      inner += `<div class="sum-item"><div class="sum-lbl">${q.text.substring(0,70)}${q.text.length>70?'...':''}</div><div class="sum-val">${val}</div></div>`;
+    });
+    if (inner) html += `<div class="sum-mod"><div class="sum-title">${mod.icon}. ${mod.title}</div>${inner}</div>`;
+  });
+
+  if (S.hasVideo) {
+    html += `<div class="sum-mod"><div class="sum-title">סרטון</div>
+      <div class="sum-item"><div class="sum-val">סרטון וידאו הוקלט ונשמר במכשיר זה.</div></div></div>`;
+  }
+
+  c.innerHTML = html;
+
+  // Print footer
+  document.getElementById('printFoot').textContent =
+    `הופק: ${new Date().toLocaleString('he-IL')} | כל המידע נשמר במכשיר הממלא בלבד.`;
+
+  showS('summary');
+}
+
+function doPrint() {
+  const pd = S.pd;
+  const hdr = document.getElementById('printHdr');
+  const meta = document.getElementById('printMeta');
+  meta.textContent = `תאריך: ${new Date().toLocaleDateString('he-IL')}` +
+    (pd.name ? ` | שם: ${pd.name}` : '') + (pd.dob ? ` | תאריך לידה: ${pd.dob}` : '') + (pd.id ? ` | ת.ז.: ${pd.id}` : '');
+  hdr.style.display = 'block';
+  document.getElementById('printFoot').style.display = 'block';
+  showSummary();
+  setTimeout(() => {
+    window.print();
+    setTimeout(() => { hdr.style.display='none'; document.getElementById('printFoot').style.display='none'; }, 600);
+  }, 300);
+}
+
+async function downloadVideo() {
+  const blob = await dbGetVideo();
+  if (!blob) { alert('אין סרטון מוקלט'); return; }
+  const ext = blob.type?.includes('mp4') ? 'mp4' : 'webm';
+  const name = S.pd.name || 'matzpen';
+  const url  = URL.createObjectURL(blob);
+  const a    = document.createElement('a');
+  a.href = url; a.download = `matzpen-chaim-${name.replace(/\s/g,'-')}.${ext}`; a.click();
+  URL.revokeObjectURL(url);
+}
+
+/* ═══════════════════════════════════════════
+   SHARE
+═══════════════════════════════════════════ */
+let shareVideo = false;
+
+function togShareOpt(type) {
+  if (type === 'Report') {
+    // always on - report is always included
+  } else {
+    shareVideo = !shareVideo;
+    const el = document.getElementById('cbShareVideo');
+    el.classList.toggle('on', shareVideo);
+    el.querySelector('.cbbox').textContent = shareVideo ? '✓' : '';
+  }
+}
+
+function revealShare() {
+  document.getElementById('shareConfirmBtn').classList.add('hidden');
+  document.getElementById('shareConfirmArea').classList.remove('hidden');
+}
+
+function buildReportText() {
+  const pd = S.pd;
+  let txt = `מצפן חיים — הצהרת רצונות\n`;
+  txt += `תאריך: ${new Date().toLocaleDateString('he-IL')}\n`;
+  txt += `━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━\n`;
+  txt += `⚠️ מסמך זה אינו מסמך משפטי מחייב. הוא מייצג את רצונותיו האישיים של הממלא.\n\n`;
+
+  // Personal
+  txt += `📋 פרטים אישיים\n`;
+  if (pd.name) txt += `שם: ${pd.name}\n`;
+  if (pd.dob)  txt += `תאריך לידה: ${pd.dob}\n`;
+  if (pd.addr) txt += `כתובת: ${pd.addr}\n`;
+  if (pd.id)   txt += `ת.ז.: ${pd.id}\n`;
+  if (pd.tel)  txt += `טלפון: ${pd.tel}\n`;
+  if (pd.sp)   txt += `בן/בת זוג: ${pd.sp}\n`;
+  if (pd.kids) txt += `ילדים: ${pd.kids}\n`;
+  txt += '\n';
+
+  MODULES.forEach(mod => {
+    let modTxt = '';
+    mod.questions.forEach(q => {
+      if (q.sensitive && !S.include52) return;
+      const a = S.answers[q.id];
+      if (!a) return;
+      let val = '';
+      if (a.kupat)  val = `קופ"ח: ${a.kupat === 'other' ? (a.kupatOther||'אחר') : a.kupat}`;
+      if (a.doctor) val += (val?'  |  ':'') + `רופא/ה: ${a.doctor}`;
+      if (a.clinic) val += (val?'  |  ':'') + `מרפאה: ${a.clinic}`;
+      if (a.choice)   val = CHOICE_L[a.choice] || a.choice;
+      if (a.checks?.length) {
+        const ls = a.checks.map(v => q.items?.find(i=>i.v===v)?.l || v);
+        val = ls.join(', ') + (a.otherText ? ` (${a.otherText})` : '');
+        if (a.textFields) Object.entries(a.textFields).forEach(([k,v]) => { if(v) val += ` — ${v}`; });
+      }
+      if (a.text)   val = a.text;
+      if (a.persons?.length) val = a.persons.filter(p=>p.name).map(p=>`${p.name}${p.rel?' ('+p.rel+')':''}`).join(', ');
+      if (a.banks?.length) val = a.banks.filter(b=>b.name||b.account).map(b=>`${b.name||''}${b.branch?' סניף '+b.branch:''}${b.account?' חשבון '+b.account:''}`).join(' | ');
+      if (a.insurances?.length) val = a.insurances.filter(i=>i.company||i.instype).map(i=>`${i.company||''} ${i.instype||''}${i.policy?' פוליסה '+i.policy:''}`).join(' | ');
+      if (a.properties?.length) val = a.properties.filter(p=>p.desc).map(p=>`${p.desc}${p.location?' — '+p.location:''}${p.note?' ('+p.note+')':''}`).join(' | ');
+      if (!val.trim()) return;
+      modTxt += `  • ${q.text.substring(0,60)}${q.text.length>60?'...':''}:\n    ${val}\n`;
+    });
+    if (modTxt) txt += `${mod.icon}. ${mod.title}\n${modTxt}\n`;
+  });
+
+  if (S.hasVideo) txt += `\n🎥 סרטון וידאו — הוקלט ונשמר במכשיר המקור.\n`;
+  txt += `\n━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━\n`;
+  txt += `כל המידע נשמר במכשיר הממלא בלבד ולא הועבר לאינטרנט.\n`;
+  return txt;
+}
+
+async function doEmail() {
+  const email = document.getElementById('shareEmail').value.trim();
+  if (!email) { alert('אנא הכנס כתובת מייל'); return; }
+
+  if (shareVideo) {
+    await downloadVideo();
+    alert('קובץ הוידאו הורד למכשיר שלך.\nלאחר פתיחת המייל — צרף את הקובץ ידנית.');
+  }
+
+  const name = S.pd.name || '';
+  const subj = encodeURIComponent(`מצפן חיים — הצהרת רצונות של ${name}`);
+  const body = encodeURIComponent(buildReportText());
+  window.location.href = `mailto:${email}?subject=${subj}&body=${body}`;
+}
+
+function doWhatsApp() {
+  const name = S.pd.name || '';
+  const txt  = buildReportText();
+  // WhatsApp has char limit - send shortened version with link to download
+  const short = `מצפן חיים — הצהרת רצונות של ${name}\n\n` +
+    txt.split('\n').slice(0,20).join('\n') + '\n\n[המסמך המלא מצורף בנפרד]';
+  window.open(`https://wa.me/?text=${encodeURIComponent(short)}`, '_blank');
+}
+
+/* ═══════════════════════════════════════════
+   INIT
+═══════════════════════════════════════════ */
+async function init() {
+  await initDB();
+  await loadState();
+  // Restore personal fields if resuming
+  if (S.pd?.name) {
+    ['name','dob','addr','id','tel','sp','kids'].forEach(k => {
+      const el = document.getElementById('pd-'+k);
+      if (el && S.pd[k]) el.value = S.pd[k];
+    });
+    document.getElementById('resumeBtn').classList.remove('hidden');
+  }
+  showS('welcome');
+}
+
+init();
+</script>
+</body>
+</html>
